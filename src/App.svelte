@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as d3 from "d3";
   import { BrowserText } from "./utils/helper";
+  import { onMount } from "svelte";
 
   interface Node {
     name: string;
@@ -10,23 +11,32 @@
   let el: any;
 
   const treeData: Node[] = [];
-  let nofNodesPerParent = 10;
+  let nofNodesPerParent = 50;
+  let nofLevels = 2;
+
   const generateChart = () => {
+    const generateLevels = (depth: number) => {
+      // Base case: if depth is 0, return an empty array (no children)
+      if (depth === 0) {
+        return [];
+      }
+
+      // Recursive case: generate children for each node
+      return Array.from({ length: nofNodesPerParent }).map((x, index) => ({
+        name: `Node Level ${depth} - Slave ${index + 1}`,
+        children: generateLevels(depth - 1), // Decrease depth with each level
+      }));
+    };
+
     for (let i = 0; i < nofNodesPerParent; ++i) {
       treeData.push({
         name: "Hussien Alrekabi & Hussien ALabady",
-        children: Array.from({ length: nofNodesPerParent }).map((x) => ({
-          name: "Mohammed Baqer",
-          children: Array.from({ length: nofNodesPerParent }).map((x) => ({
-            name: "Slave",
-            children: [],
-          })),
-        })),
+        children: generateLevels(nofLevels),
       });
     }
 
     // Specify the charts’ dimensions. The height is variable, depending on the layout.
-    const width = 928;
+    const width = 2000;
     const marginTop = 40;
     const marginRight = 10;
     const marginBottom = 40;
@@ -46,6 +56,26 @@
       .x((d) => d.y)
       .y((d) => d.x);
 
+    // var transform = d3.zoomIdentity.translate(0, 0).scale(2);
+
+    // Add zoom behavior to the SVG
+    const zoom = d3
+      .zoom()
+      .scaleExtent([1.5, 4])
+      .on("zoom", (event) => {
+        svg.attr("transform", event.transform); // Apply the zoom transformation
+      });
+
+    // let lastZoomTime = 0;
+    // const zoom = d3.zoom().on("zoom", (event) => {
+    //   const now = Date.now();
+    //   if (now - lastZoomTime > 100) {
+    //     // Throttle every 100ms
+    //     svg.attr("transform", event.transform); // Apply transformation
+    //     lastZoomTime = now;
+    //   }
+    // });
+
     // Create the SVG container, a layer for the links and a layer for the nodes.
     const svg = d3
       .create("svg")
@@ -55,7 +85,8 @@
       .attr(
         "style",
         "max-width: 100%; height: auto; font: 10px sans-serif; user-select: none;"
-      );
+      )
+      .call(zoom);
 
     const gLink = svg
       .append("g")
@@ -70,7 +101,7 @@
       .attr("pointer-events", "all");
 
     function update(event, source) {
-      const duration = event?.altKey ? 2500 : 250; // hold the alt key to slow down the transition
+      const duration = event?.altKey ? 2500 : 200; // hold the alt key to slow down the transition
       const nodes = root.descendants().reverse();
       const links = root.links();
 
@@ -111,41 +142,6 @@
           d.children = d.children ? null : d._children;
           update(event, d);
         });
-
-      // // Append rectangle behind text for each node
-      // nodeEnter
-      //   .append("rect")
-      //   // .attr("x", function () {
-      //   //   // Calculate the rectangle's x position based on the text length.
-      //   //   const textWidth = this.previousSibling.getComputedTextLength(); // Use nextSibling since rect is inserted before text
-      //   //   return -textWidth / 2 - 6; // Center the rectangle relative to the text, adding padding
-      //   // })
-      //   // .attr("x", (d) => (d._children ? -50 : -6))
-      //   .attr("y", -10) // Adjust the y position of the rectangle relative to the text
-      //   .attr("rx", 4) // Rounded corners for the rectangle
-      //   .attr("ry", 4) // Rounded corners for the rectangle
-      //   .attr("width", function () {
-      //     console.log(this.previousSibling);
-
-      //     // const textWidth = this.nextSibling.getComputedTextLength(); // Use nextSibling to access the text's width
-      //     // return textWidth + 12; // Add padding to the width of the rectangle
-      //   })
-      //   .attr("height", 20) // Height of the rectangle
-      //   .attr("fill", "#e8f5e9") // Light green background color
-      //   .attr("stroke", "#555") // Border color
-      //   .attr("stroke-width", 1.5);
-
-      // nodeEnter
-      //   .append("text")
-      //   .attr("class", "node__text")
-      //   .attr("dy", "0.31em")
-      //   .attr("x", (d) => (d._children ? -6 : 6))
-      //   .attr("text-anchor", (d) => (d._children ? "end" : "start"))
-      //   .text((d) => d.data.name)
-      //   .attr("stroke-linejoin", "round")
-      //   .attr("stroke-width", 3)
-      //   .attr("stroke", "white")
-      //   .attr("paint-order", "stroke");
 
       nodeEnter
         .append("rect")
@@ -276,23 +272,36 @@
     return svg.node();
   };
 
-  $: {
-    if (nofNodesPerParent && el) {
+  onMount(() => {
+    const svg = generateChart();
+    el.appendChild(svg);
+  });
+
+  // $: {
+  //   if (nofNodesPerParent && nofLevels && el) {
+  //     const svg = generateChart();
+
+  //     el.innerHTML = "";
+  //     console.log({ svg });
+  //     el.appendChild(svg);
+  //   }
+  // }
+</script>
+
+<main>
+  <input type="number" bind:value={nofNodesPerParent} name="" id="" />
+  <input type="number" bind:value={nofLevels} name="" id="" />
+  <button
+    on:click={() => {
       const svg = generateChart();
 
       el.innerHTML = "";
       console.log({ svg });
       el.appendChild(svg);
-    }
-  }
-</script>
+    }}>Generate</button
+  >
 
-<main>
-  <input type="number" bind:value={nofNodesPerParent} name="" id="" />
-
-  <div style="background-color: #F3F4F6;">
-    <div id="el" class="chart" bind:this={el}></div>
-  </div>
+  <div id="el" class="chart" bind:this={el}></div>
 </main>
 
 <style>
