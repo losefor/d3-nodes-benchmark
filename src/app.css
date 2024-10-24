@@ -1,0 +1,12 @@
+.node circle {
+  /* cursor: pointer;
+  fill: #fff;
+  stroke: #333;
+  stroke-width: 3px; */
+}
+
+.node text {
+  font-family: "Arial", sans-serif;
+  font-size: 12px;
+  margin: 8px;
+}
