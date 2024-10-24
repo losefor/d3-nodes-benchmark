@@ -11,11 +11,12 @@
   let el: any;
 
   const treeData: Node[] = [];
-  let nofNodesPerParent = 50;
+  let nofNodesPerParent = 20;
   let nofLevels = 2;
 
   const generateChart = () => {
-    const generateLevels = (depth: number) => {
+    // Generating samples value for the tree
+    const generateLevels = (depth: number): Node[] => {
       // Base case: if depth is 0, return an empty array (no children)
       if (depth === 0) {
         return [];
@@ -53,28 +54,16 @@
     const tree = d3.tree().nodeSize([dx, dy]);
     const diagonal = d3
       .linkHorizontal()
-      .x((d) => d.y)
-      .y((d) => d.x);
-
-    // var transform = d3.zoomIdentity.translate(0, 0).scale(2);
+      .x((d: any) => d.y)
+      .y((d: any) => d.x);
 
     // Add zoom behavior to the SVG
     const zoom = d3
       .zoom()
-      .scaleExtent([1.5, 4])
+      .scaleExtent([2, 4])
       .on("zoom", (event) => {
         svg.attr("transform", event.transform); // Apply the zoom transformation
       });
-
-    // let lastZoomTime = 0;
-    // const zoom = d3.zoom().on("zoom", (event) => {
-    //   const now = Date.now();
-    //   if (now - lastZoomTime > 100) {
-    //     // Throttle every 100ms
-    //     svg.attr("transform", event.transform); // Apply transformation
-    //     lastZoomTime = now;
-    //   }
-    // });
 
     // Create the SVG container, a layer for the links and a layer for the nodes.
     const svg = d3
@@ -86,7 +75,7 @@
         "style",
         "max-width: 100%; height: auto; font: 10px sans-serif; user-select: none;"
       )
-      .call(zoom);
+      .call(zoom as any);
 
     const gLink = svg
       .append("g")
@@ -100,17 +89,17 @@
       .attr("cursor", "pointer")
       .attr("pointer-events", "all");
 
-    function update(event, source) {
+    function update(event: any, source: any) {
       const duration = event?.altKey ? 2500 : 200; // hold the alt key to slow down the transition
       const nodes = root.descendants().reverse();
       const links = root.links();
 
       // Compute the new tree layout.
-      tree(root);
+      tree(root as any);
 
-      let left = root;
-      let right = root;
-      root.eachBefore((node) => {
+      let left: any = root;
+      let right: any = root;
+      root.eachBefore((node: any) => {
         if (node.x < left.x) left = node;
         if (node.x > right.x) right = node;
       });
@@ -121,14 +110,21 @@
         .transition()
         .duration(duration)
         .attr("height", height)
-        .attr("viewBox", [-marginLeft, left.x - marginTop, width, height])
+        .attr("viewBox", [
+          -marginLeft,
+          left.x - marginTop,
+          width,
+          height,
+        ] as any)
         .tween(
           "resize",
-          window.ResizeObserver ? null : () => () => svg.dispatch("toggle")
+          window.ResizeObserver
+            ? (null as any)
+            : () => () => svg.dispatch("toggle")
         );
 
       // Update the nodes…
-      const node = gNode.selectAll("g").data(nodes, (d) => d.id);
+      const node = gNode.selectAll("g").data(nodes, (d: any) => d.id);
 
       // Enter any new nodes at the parent's previous position.
       const nodeEnter = node
@@ -138,7 +134,7 @@
         .attr("transform", (d) => `translate(${source.y0},${source.x0})`)
         .attr("fill-opacity", 0)
         .attr("stroke-opacity", 0)
-        .on("click", (event, d) => {
+        .on("click", (event: any, d: any) => {
           d.children = d.children ? null : d._children;
           update(event, d);
         });
@@ -161,10 +157,10 @@
           //   ? "rgb(3, 192, 220)"
           //   : "rgb(38, 222, 176)";
         })
-        .attr("stroke-dasharray", function (d) {
+        .attr("stroke-dasharray", function (d: any) {
           return d.children || d._children ? "0" : "2.2";
         })
-        .attr("stroke-opacity", function (d) {
+        .attr("stroke-opacity", function (d: any) {
           return d.children || d._children ? "1" : "0.6";
         })
         .attr("x", (d) => {
@@ -185,7 +181,6 @@
         .append("text")
         .style("fill", function (d) {
           if (d.parent) {
-            // return d.children || d._children ? "#ffffff" : "rgb(38, 222, 176)";
             return "black";
           }
           return "rgb(39, 43, 77)";
@@ -201,16 +196,10 @@
           return d.data.name;
         });
 
-      // nodeEnter
-      //   .append("circle")
-      //   .attr("r", 2.5)
-      //   .attr("fill", (d) => (d._children ? "#555" : "#999"))
-      //   .attr("stroke-width", 10);
-
       // Transition nodes to their new position.
       const nodeUpdate = node
-        .merge(nodeEnter)
-        .transition(transition)
+        .merge(nodeEnter as any)
+        .transition(transition as any)
         .attr("transform", (d) => `translate(${d.y},${d.x})`)
         .attr("fill-opacity", 1)
         .attr("stroke-opacity", 1);
@@ -218,14 +207,14 @@
       // Transition exiting nodes to the parent's new position.
       const nodeExit = node
         .exit()
-        .transition(transition)
+        .transition(transition as any)
         .remove()
         .attr("transform", (d) => `translate(${source.y},${source.x})`)
         .attr("fill-opacity", 0)
         .attr("stroke-opacity", 0);
 
       // Update the links…
-      const link = gLink.selectAll("path").data(links, (d) => d.target.id);
+      const link = gLink.selectAll("path").data(links, (d: any) => d.target.id);
 
       // Enter any new links at the parent's previous position.
       const linkEnter = link
@@ -233,24 +222,27 @@
         .append("path")
         .attr("d", (d) => {
           const o = { x: source.x0, y: source.y0 };
-          return diagonal({ source: o, target: o });
+          return diagonal({ source: o, target: o } as any);
         });
 
       // Transition links to their new position.
-      link.merge(linkEnter).transition(transition).attr("d", diagonal);
+      link
+        .merge(linkEnter as any)
+        .transition(transition as any)
+        .attr("d", diagonal as any);
 
       // Transition exiting nodes to the parent's new position.
       link
         .exit()
-        .transition(transition)
+        .transition(transition as any)
         .remove()
         .attr("d", (d) => {
           const o = { x: source.x, y: source.y };
-          return diagonal({ source: o, target: o });
+          return diagonal({ source: o, target: o } as any);
         });
 
       // Stash the old positions for transition.
-      root.eachBefore((d) => {
+      root.eachBefore((d: any) => {
         d.x0 = d.x;
         d.y0 = d.y;
       });
@@ -258,9 +250,9 @@
 
     // Do the first update to the initial configuration of the tree — where a number of nodes
     // are open (arbitrarily selected as the root, plus nodes with 7 letters).
-    root.x0 = dy / 2;
-    root.y0 = 0;
-    root.descendants().forEach((d, i) => {
+    (root as any).x0 = dy / 2;
+    (root as any).y0 = 0;
+    root.descendants().forEach((d: any, i: number) => {
       d.id = i;
       d._children = d.children;
       if (d.depth && d.data.name.length !== 7) d.children = null;
@@ -276,16 +268,6 @@
     const svg = generateChart();
     el.appendChild(svg);
   });
-
-  // $: {
-  //   if (nofNodesPerParent && nofLevels && el) {
-  //     const svg = generateChart();
-
-  //     el.innerHTML = "";
-  //     console.log({ svg });
-  //     el.appendChild(svg);
-  //   }
-  // }
 </script>
 
 <main>
@@ -293,11 +275,8 @@
   <input type="number" bind:value={nofLevels} name="" id="" />
   <button
     on:click={() => {
-      const svg = generateChart();
-
       el.innerHTML = "";
-      console.log({ svg });
-      el.appendChild(svg);
+      el.appendChild(generateChart());
     }}>Generate</button
   >
 
